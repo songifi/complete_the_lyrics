@@ -6,7 +6,7 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
-@Entity('users')
+@Entity('user')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
