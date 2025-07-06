@@ -54,7 +54,6 @@ export class LyricsService {
     const randomOffset = Math.floor(Math.random() * count);
     const lyric = await qb.skip(randomOffset).take(1).getOne();
     if (!lyric) throw new NotFoundException('No lyric found');
-    // Exclude correctCompletion for gameplay
     const { correctCompletion, ...rest } = lyric;
     return rest;
   }
