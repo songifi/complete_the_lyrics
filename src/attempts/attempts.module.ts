@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import { AttemptsController } from './attempts.controller';
+
+@Module({
+  controllers: [AttemptsController],
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AttemptsController } from './attempts.controller';
 import { AttemptsService } from './attempts.service';
