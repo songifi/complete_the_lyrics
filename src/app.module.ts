@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
+import { AttemptsModule } from './attempts/attempts.module';
 import * as Joi from 'joi';
 
 @Module({
