@@ -4,8 +4,6 @@ dist
 # Node
 node_modules/
 dist/
-package-lock.json
-
 # Environment
 .env
 
