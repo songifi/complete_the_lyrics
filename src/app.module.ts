@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
+import { AttemptsModule } from './attempts/attempts.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -22,7 +22,11 @@ import * as Joi from 'joi';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
-        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+        NODE_ENV: Joi.string()
+          .valid('development', 'production', 'test')
+          .default('development'),
+        JWT_SECRET: Joi.string().required(),
+        JWT_EXPIRES_IN: Joi.string().default('7d'),
       }),
     }),
     TypeOrmModule.forRootAsync({
