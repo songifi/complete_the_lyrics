@@ -5,11 +5,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LyricsModule } from './lyrics/lyrics.module';
 import { AuthModule } from './auth/auth.module';
-import { AttemptsModule } from './attempts/attempts.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import * as Joi from 'joi';
+import { AdminController } from './admin.controller';
 
 @Module({
   imports: [
@@ -49,7 +49,7 @@ import * as Joi from 'joi';
     UsersModule,
     CommonModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AdminController],
   providers: [AppService],
 })
 export class AppModule {}
