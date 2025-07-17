@@ -34,8 +34,8 @@ export class UserStatsService {
   }
 
   async createOrUpdateStats(updateData: StatsUpdateDto): Promise<UserStats> {
-    let stats = await this.userStatsRepository.findOne({ 
-      where: { userId: updateData.userId } 
+    let stats = await this.userStatsRepository.findOne({
+      where: { userId: updateData.userId },
     });
 
     if (!stats) {
@@ -83,7 +83,7 @@ export class UserStatsService {
       .createQueryBuilder('stats')
       .where('stats.score > :score', { score: userStats.score })
       .getCount();
-    
+
     return rank + 1;
   }
 
@@ -93,7 +93,27 @@ export class UserStatsService {
     stats.correctAttempts = 0;
     stats.score = 0;
     stats.accuracyRate = 0;
-    
+
     return await this.userStatsRepository.save(stats);
+  }
+
+  async getStatsForExport({
+    userId,
+    from,
+    to,
+    category,
+  }: {
+    userId?: string;
+    from?: string;
+    to?: string;
+    category?: string;
+  }) {
+    // Implement actual filtering logic as needed
+    const query = this.userStatsRepository.createQueryBuilder('stats');
+    if (userId) query.andWhere('stats.userId = :userId', { userId });
+    if (from) query.andWhere('stats.createdAt >= :from', { from });
+    if (to) query.andWhere('stats.createdAt <= :to', { to });
+    // category filtering would require a join if category is not in user stats
+    return query.getMany();
   }
 }
