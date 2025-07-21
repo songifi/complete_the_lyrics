@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('user_stats')
-@Index(['score'], { name: 'idx_user_stats_score' })
+@Index('idx_user_stats_score', ['score'])
 export class UserStats {
   @PrimaryGeneratedColumn()
   id: number;

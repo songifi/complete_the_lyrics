@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, Index } from 'typeorm';
 
-export class CreateUserStats1234567890 implements MigrationInterface {
+export class CreateUserStats1751835818000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -56,15 +56,9 @@ export class CreateUserStats1234567890 implements MigrationInterface {
       true,
     );
 
-    await queryRunner.createIndex(
-      'user_stats',
-      new Index('idx_user_stats_userId', ['userId']),
-    );
-
-    await queryRunner.createIndex(
-      'user_stats',
-      new Index('idx_user_stats_score', ['score']),
-    );
+    // Create indexes
+    await queryRunner.query(`CREATE INDEX "idx_user_stats_userId" ON "user_stats" ("userId")`);
+    await queryRunner.query(`CREATE INDEX "idx_user_stats_score" ON "user_stats" ("score")`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
