@@ -1,6 +1,10 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Lyrics } from './lyrics/entities/lyrics.entity';
+import { User } from './users/entities/user.entity';
+import { UserStats } from './user-stats/entities/user-stats.entity';
+import { Attempt } from './attempts/entities/attempt.entity';
+import { FlaggedLyrics } from './flagged-lyrics/entities/flagged-lyrics.entity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,7 +16,12 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [Lyrics],
-  migrations: ['src/lyrics/migrations/*.ts', 'src/users/migrations/*.ts'],
+  entities: [Lyrics, User, UserStats, Attempt, FlaggedLyrics],
+  migrations: [
+    'src/lyrics/migrations/*.ts',
+    'src/users/migrations/*.ts',
+    'src/user-stats/migrations/*.ts',
+    'src/flagged-lyrics/migrations/*.ts',
+  ],
   synchronize: false,
 });
