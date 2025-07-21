@@ -113,7 +113,12 @@ export class UserStatsService {
     if (userId) query.andWhere('stats.userId = :userId', { userId });
     if (from) query.andWhere('stats.createdAt >= :from', { from });
     if (to) query.andWhere('stats.createdAt <= :to', { to });
-    // category filtering would require a join if category is not in user stats
+    // TODO: Implement category filtering when needed - would require join with attempts/lyrics
+    if (category) {
+      // Placeholder for future implementation
+      console.log(`Category filtering for ${category} not yet implemented`);
+    }
+
     return query.getMany();
   }
 }
