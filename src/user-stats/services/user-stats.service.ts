@@ -101,23 +101,15 @@ export class UserStatsService {
     userId,
     from,
     to,
-    category,
   }: {
     userId?: string;
     from?: string;
     to?: string;
-    category?: string;
   }) {
-    // Implement actual filtering logic as needed
     const query = this.userStatsRepository.createQueryBuilder('stats');
     if (userId) query.andWhere('stats.userId = :userId', { userId });
     if (from) query.andWhere('stats.createdAt >= :from', { from });
     if (to) query.andWhere('stats.createdAt <= :to', { to });
-    // TODO: Implement category filtering when needed - would require join with attempts/lyrics
-    if (category) {
-      // Placeholder for future implementation
-      console.log(`Category filtering for ${category} not yet implemented`);
-    }
 
     return query.getMany();
   }
