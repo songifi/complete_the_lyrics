@@ -5,12 +5,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LyricsModule } from './lyrics/lyrics.module';
 import { AuthModule } from './auth/auth.module';
-import { AttemptsModule } from './attempts/attempts.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { FlaggedLyricsModule } from './flagged-lyrics/flagged-lyrics.module';
 import * as Joi from 'joi';
+import { AdminController } from './admin.controller';
 
 @Module({
   imports: [
@@ -52,7 +52,7 @@ import * as Joi from 'joi';
     AdminModule,
     FlaggedLyricsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AdminController],
   providers: [AppService],
 })
 export class AppModule {}

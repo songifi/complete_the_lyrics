@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -33,6 +38,7 @@ export class UsersService {
       email,
       username,
       password: hashedPassword,
+      role: 'user', // Ensure default role
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -40,11 +46,11 @@ export class UsersService {
     // Exclude password from response
     // const { password: _, ...result } = savedUser;
     return {
-    id: savedUser.id,
-    email: savedUser.email,
-    username: savedUser.username,
-    createdAt: savedUser.createdAt,
-  };
+      id: savedUser.id,
+      email: savedUser.email,
+      username: savedUser.username,
+      createdAt: savedUser.createdAt,
+    };
   }
 
   async login(loginDto: LoginDto): Promise<Omit<User, 'password'>> {
@@ -78,5 +84,4 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({ where: { email } });
   }
-  
 }

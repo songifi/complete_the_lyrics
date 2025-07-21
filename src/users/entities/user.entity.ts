@@ -21,6 +21,9 @@ export class User {
   @Exclude()
   password: string;
 
+  @Column({ default: 'user' })
+  role: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }
