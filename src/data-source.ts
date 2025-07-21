@@ -17,6 +17,11 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   entities: [Lyrics, User, UserStats, Attempt, FlaggedLyrics],
-  migrations: ['src/**/migrations/*.ts'],
+  migrations: [
+    'src/lyrics/migrations/*.ts',
+    'src/users/migrations/*.ts',
+    'src/user-stats/migrations/*.ts',
+    'src/flagged-lyrics/migrations/*.ts',
+  ],
   synchronize: false,
 });
