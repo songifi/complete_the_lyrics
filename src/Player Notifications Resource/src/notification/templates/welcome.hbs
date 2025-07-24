@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Welcome to Our Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome {{name}}!</h1>
+    </div>
+    <div class="content">
+        <p>Thank you for joining our platform. We're excited to have you on board!</p>
+        
+        {{#if features}}
+        <h3>Here's what you can do:</h3>
+        <ul>
+            {{#each features}}
+            <li>{{this}}</li>
+            {{/each}}
+        </ul>
+        {{/if}}
+        
+        <p>If you have any questions, feel free to reach out to our support team.</p>
+        
+        <a href="{{dashboardUrl}}" class="button">Go to Dashboard</a>
+    </div>
+</body>
+</html>
