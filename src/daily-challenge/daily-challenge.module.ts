@@ -7,6 +7,7 @@ import { DailyChallenge } from './entities/daily-challenge.entity';
 import { DailyChallengeService } from './services/daily-challenge.service';
 import { DailyChallengeController } from './controllers/daily-challenge.controller';
 import { ChallengeRewardProcessor } from './processors/challenge-reward.processor';
+import { DailyChallengeGateway } from './gateways/daily-challenge.gateway';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ChallengeRewardProcessor } from './processors/challenge-reward.processo
     BullModule.registerQueue({ name: 'challenge-reward' }),
     RedisModule,
   ],
-  providers: [DailyChallengeService, ChallengeRewardProcessor],
+  providers: [DailyChallengeService, ChallengeRewardProcessor, DailyChallengeGateway],
   controllers: [DailyChallengeController],
   exports: [DailyChallengeService],
 })
