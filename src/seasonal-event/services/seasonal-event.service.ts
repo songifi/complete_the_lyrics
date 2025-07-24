@@ -51,6 +51,8 @@ export class SeasonalEventService {
   // Process rewards
   async processRewards(userId: string, eventId: string) {
     await this.analyticsService.trackCompletion(userId, eventId);
-    // TODO: Implement reward processing
+    // Enqueue reward job
+    await this.rewardQueue.add({ userId, eventId });
+    this.logger.log(`Enqueued reward processing for user ${userId} in event ${eventId}`);
   }
 } 

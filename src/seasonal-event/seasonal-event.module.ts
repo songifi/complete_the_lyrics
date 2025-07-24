@@ -10,6 +10,7 @@ import { SeasonalEventGateway } from './gateways/seasonal-event.gateway';
 import { SeasonalEventAnalyticsService } from './services/seasonal-event-analytics.service';
 import { EventAccessGuard } from './guards/event-access.guard';
 import { RewardCalculationPipe } from './pipes/reward-calculation.pipe';
+import { SeasonalEventRewardProcessor } from './processors/seasonal-event-reward.processor';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RewardCalculationPipe } from './pipes/reward-calculation.pipe';
     SeasonalEventAnalyticsService,
     EventAccessGuard,
     RewardCalculationPipe,
+    SeasonalEventRewardProcessor,
   ],
   controllers: [SeasonalEventController],
   exports: [SeasonalEventService],
