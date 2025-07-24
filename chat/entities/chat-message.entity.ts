@@ -25,10 +25,12 @@ export class ChatMessage {
   @Prop([{ type: Types.ObjectId, ref: 'User' }])
   recipients: Types.ObjectId[];
 
-  @Prop([{
-    emoji: { type: String, required: true },
-    users: [{ type: Types.ObjectId, ref: 'User' }]
-  }])
+  @Prop([
+    {
+      emoji: { type: String, required: true },
+      users: [{ type: Types.ObjectId, ref: 'User' }],
+    },
+  ])
   reactions: { emoji: string; users: Types.ObjectId[] }[];
 
   @Prop()

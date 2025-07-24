@@ -10,7 +10,6 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ChatService } from '../services/chat.service';
 import { CreateMessageDto } from '../dtos/create-message.dto';
 import { User } from '../../common/decorators/user.decorator';
@@ -18,11 +17,11 @@ import { MessageEncryptionInterceptor } from '../interceptors/message-encryption
 import { ProfanityFilterPipe } from '../pipes/profanity-filter.pipe';
 import { SearchMessageDto } from '../dtos/search-message.dto';
 import { Types } from 'mongoose';
+import { JwtAuthGuard } from 'auth/guard/jwt-auth.guard';
 
 interface AuthenticatedUser {
   userId: Types.ObjectId;
   username: string;
-  getFlaggedMessages;
   // Add other user properties as needed
 }
 
@@ -36,7 +35,7 @@ export class MessageController {
   async create(
     @Body() createMessageDto: CreateMessageDto,
     @User() user: AuthenticatedUser,
-  ) {
+  ): Promise<any> {
     return this.chatService.createMessage({
       ...createMessageDto,
       sender: user.userId,
@@ -48,11 +47,11 @@ export class MessageController {
     @Param('roomId') roomId: string,
     @Query('limit') limit = 50,
     @Query('before') before?: string,
-  ) {
+  ): Promise<any[]> {
     const beforeDate = before ? new Date(before) : undefined;
     return this.chatService.getMessagesByRoom(
       new Types.ObjectId(roomId),
-      limit,
+      Number(limit),
       beforeDate,
     );
   }
@@ -64,12 +63,12 @@ export class MessageController {
     @User() user: AuthenticatedUser,
     @Query('limit') limit = 50,
     @Query('before') before?: string,
-  ) {
+  ): Promise<any[]> {
     const beforeDate = before ? new Date(before) : undefined;
     return this.chatService.getPrivateMessages(
       user.userId,
       new Types.ObjectId(recipientId),
-      limit,
+      Number(limit),
       beforeDate,
     );
   }
@@ -78,7 +77,7 @@ export class MessageController {
   async searchMessages(
     @Query() searchDto: SearchMessageDto,
     @User() user: AuthenticatedUser,
-  ) {
+  ): Promise<any[]> {
     return this.chatService.searchMessages(searchDto.query, {
       roomId: searchDto.roomId
         ? new Types.ObjectId(searchDto.roomId)
@@ -97,7 +96,7 @@ export class MessageController {
     @Param('id') messageId: string,
     @Body('emoji') emoji: string,
     @User() user: AuthenticatedUser,
-  ) {
+  ): Promise<any> {
     return this.chatService.addReaction(
       new Types.ObjectId(messageId),
       emoji,
@@ -106,7 +105,7 @@ export class MessageController {
   }
 
   @Get('flagged')
-  getFlaggedMessages() {
+  async getFlaggedMessages(): Promise<any[]> {
     return this.chatService.getFlaggedMessages();
   }
 }
