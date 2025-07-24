@@ -5,6 +5,7 @@ import { SeasonalEvent } from '../entities/seasonal-event.entity';
 import * as moment from 'moment-timezone';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { SeasonalEventAnalyticsService } from './seasonal-event-analytics.service';
 
 @Injectable()
 export class SeasonalEventService {
@@ -15,6 +16,7 @@ export class SeasonalEventService {
     private readonly eventRepo: Repository<SeasonalEvent>,
     @InjectQueue('seasonal-event-reward')
     private readonly rewardQueue: Queue,
+    private readonly analyticsService: SeasonalEventAnalyticsService,
   ) {}
 
   // Schedule and activate events
@@ -43,11 +45,12 @@ export class SeasonalEventService {
 
   // Track participation
   async trackParticipation(userId: string, eventId: string) {
-    // TODO: Implement participation tracking
+    await this.analyticsService.trackParticipation(userId, eventId);
   }
 
   // Process rewards
   async processRewards(userId: string, eventId: string) {
+    await this.analyticsService.trackCompletion(userId, eventId);
     // TODO: Implement reward processing
   }
 } 
