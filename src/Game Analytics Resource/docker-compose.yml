@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  analytics-service:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=analytics
+      - DB_PASSWORD=analytics123
+      - DB_NAME=analytics
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=kafka:9092
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - AIRFLOW_URL=http://airflow:8080
+      - AIRFLOW_USERNAME=admin
+      - AIRFLOW_PASSWORD=admin
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - clickhouse
+    volumes:
+      - ./models:/app/models
+    networks:
+      - analytics-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=analytics
+      - POSTGRES_USER=analytics
+      - POSTGRES_PASSWORD=analytics123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - analytics-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - analytics-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - analytics-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - analytics-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    environment:
+      - CLICKHOUSE_DB=analytics
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+    networks:
+      - analytics-network
+
+  airflow:
+    image: apache/airflow:2.7.0
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
+      - AIRFLOW__CORE__FERNET_KEY=your-fernet-key-here
+      - AIRFLOW__WEBSERVER__SECRET_KEY=your-secret-key-here
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - analytics-network
+
+  postgres-airflow:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=airflow
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+    volumes:
+      - postgres_airflow_data:/var/lib/postgresql/data
+    networks:
+      - analytics-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  clickhouse_data:
+  postgres_airflow_data:
+  airflow_logs:
+
+networks:
+  analytics-network:
+    driver: bridge
