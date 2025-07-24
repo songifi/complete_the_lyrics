@@ -1,5 +1,10 @@
 // src/chat/gateways/chat.gateway.ts
-import { WebSocketGateway, WebSocketServer, OnGatewayInit, SubscribeMessage } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayInit,
+  SubscribeMessage,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from '../guards/ws-jwt.guard';
