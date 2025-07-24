@@ -20,4 +20,14 @@ export class SeasonalEventGateway {
     this.logger.log(`Participation update: ${JSON.stringify(data)}`);
     this.server.emit('participationUpdate', data);
   }
+
+  emitEventStatus(event: any) {
+    this.logger.log(`Broadcasting event status: ${event.id} isActive=${event.isActive}`);
+    this.server.emit('eventStatus', { eventId: event.id, isActive: event.isActive });
+  }
+
+  emitParticipationUpdate(eventId: string, userId: string) {
+    this.logger.log(`Broadcasting participation: user ${userId} joined event ${eventId}`);
+    this.server.emit('participationUpdate', { eventId, userId });
+  }
 } 
