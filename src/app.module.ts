@@ -1,18 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { LyricsModule } from './lyrics/lyrics.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { CommonModule } from './common/common.module';
-import { AdminModule } from './admin/admin.module';
-import { FlaggedLyricsModule } from './flagged-lyrics/flagged-lyrics.module';
-import { AttemptsModule } from './attempts/attempts.module';
 import { PaymentsModule } from './payments/payments.module';
+import { MetricsModule } from './metrics.module';
+import { LoggerModule } from './logger.module';
+import { HealthModule } from './health.module';
+import { APMModule } from './apm.module';
 import * as Joi from 'joi';
-import { AdminController } from './admin.controller';
 
 @Module({
   imports: [
@@ -28,8 +22,6 @@ import { AdminController } from './admin.controller';
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
           .default('development'),
-        JWT_SECRET: Joi.string().required(),
-        JWT_EXPIRES_IN: Joi.string().default('7d'),
         STRIPE_SECRET_KEY: Joi.string().required(),
         STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
         STRIPE_WEBHOOK_SECRET: Joi.string().required(),
@@ -52,16 +44,13 @@ import { AdminController } from './admin.controller';
       }),
       inject: [ConfigService],
     }),
-    LyricsModule,
-    AuthModule,
-    AttemptsModule,
-    UsersModule,
-    CommonModule,
-    AdminModule,
-    FlaggedLyricsModule,
+    LoggerModule,
+    MetricsModule,
+    HealthModule,
+    APMModule,
     PaymentsModule,
   ],
-  controllers: [AppController, AdminController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

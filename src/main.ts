@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,9 +16,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  // Global exception filter
-  app.useGlobalFilters(new HttpExceptionFilter());
 
   // CORS configuration for frontend integration
   app.enableCors({
@@ -66,9 +62,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`💳 Payment system initialized with Stripe integration`);
-  console.log(`🔒 Security guards and fraud detection enabled`);
+  Logger.log(`🚀 Application is running on: http://localhost:${port}`);
+  Logger.log(`💳 Payment system initialized with Stripe integration`);
+  Logger.log(`🔒 Security guards and fraud detection enabled`);
 }
 
 bootstrap();
