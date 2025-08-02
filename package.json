@@ -35,6 +35,8 @@
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.5",
+    "@tensorflow/tfjs": "^4.22.0",
+    "aws-sdk": "^2.1692.0",
     "bad-words": "^4.0.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -44,6 +46,7 @@
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "ioredis": "^5.7.0",
+    "javascript-state-machine": "^3.1.0",
     "joi": "^17.13.3",
     "json2csv": "6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
@@ -113,5 +116,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  }
+  },
+  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"
 }
