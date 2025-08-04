@@ -7,6 +7,7 @@ import { LoggerModule } from './logger.module';
 import { HealthModule } from './health.module';
 import { APMModule } from './apm.module';
 import * as Joi from 'joi';
+import { TournamentModule } from './tournament/tournament.module';
 
 @Module({
   imports: [
