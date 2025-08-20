@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TerminusModule } from '@nestjs/terminus';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TerminusModule } from '@nestjs/terminus';
       }),
     }),
     TerminusModule,
+    LeaderboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
