@@ -100,5 +100,4 @@ async function bootstrap() {
   Logger.log(`Rate limiting enabled`);
   Logger.log(`Request logging and validation active`);
 }
-
 bootstrap();
