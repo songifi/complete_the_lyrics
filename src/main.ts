@@ -1,70 +1,104 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { AppModule } from './app.module';
+import { NestFactory } from "@nestjs/core";
+import { ValidationPipe, Logger } from "@nestjs/common";
+import { AppModule } from "./app.module";
+import { SecurityService, CspService } from "./security";
+import { CspMiddleware, CspHeaderMiddleware } from "./security";
+import * as bodyParser from "body-parser";
+import { Request, Response, NextFunction } from "express";
+import { ConfigService } from "@nestjs/config";
+import helmet from "helmet";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    // Enable raw body for webhook endpoints
     rawBody: true,
   });
 
-  // Global validation pipe
+  const expressApp = app.getHttpAdapter().getInstance();
+  if (expressApp && typeof expressApp.set === "function") {
+    expressApp.set("trust proxy", 1);
+  }
+
+  const securityService = app.get(SecurityService);
+  app.enableCors(securityService.getCorsConfig());
+
+  app.use(helmet(securityService.getHelmetConfig()));
+
+  const cspService = app.get(CspService);
+
+  app.use(new CspMiddleware().use);
+
+  app.use(new CspHeaderMiddleware(cspService).use);
+
+  const configService = app.get(ConfigService);
+  const securityConfig = configService.get("security");
+  const maxSize = securityConfig?.validation?.maxBodySize || 10 * 1024 * 1024;
+
+  app.use(bodyParser.json({ limit: maxSize }));
+
+  app.use(
+    bodyParser.urlencoded({
+      extended: true,
+      limit: maxSize,
+      parameterLimit: 1000,
+    }),
+  );
+
+  app.use(
+    bodyParser.raw({
+      type: ["application/json", "text/plain"],
+      limit: maxSize,
+    }),
+  );
+
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err.type === "entity.too.large") {
+      return res.status(413).json({
+        error: "Payload Too Large",
+        message: `Request payload exceeds maximum allowed size of ${maxSize / (1024 * 1024)}MB`,
+        statusCode: 413,
+        path: req.path,
+        method: req.method,
+      });
+    }
+    next(err);
+  });
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), microphone=(), camera=()",
+    );
+    next();
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      forbidUnknownValues: true,
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
+      validationError: {
+        target: false,
+        value: false,
+      },
     }),
   );
 
-  // CORS configuration for frontend integration
-  app.enableCors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com'] // Add your production domains
-        : ['http://localhost:3000', 'http://localhost:3001'], // React/Next.js dev servers
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-      'X-CSRF-Token',
-      'Idempotency-Key',
-      'X-MFA-Token',
-      'Stripe-Signature',
-    ],
-    credentials: true,
-  });
-
-  // Add security headers
-  app.use((req, res, next) => {
-    // Security headers
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains',
-    );
-
-    // Payment-specific security headers
-    if (req.path.startsWith('/payments')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
-
-    next();
-  });
+  app.setGlobalPrefix("api/v1");
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  Logger.log(`💳 Payment system initialized with Stripe integration`);
-  Logger.log(`🔒 Security guards and fraud detection enabled`);
+  Logger.log(`Application is running on: http://localhost:${port}`);
+  Logger.log(`Payment system initialized with Stripe integration`);
+  Logger.log(`Security middleware and protective measures enabled`);
+  Logger.log(`API versioning enabled with prefix: /api/v1`);
+  Logger.log(`Security headers configured`);
+  Logger.log(`Rate limiting enabled`);
+  Logger.log(`Request logging and validation active`);
 }
 
 bootstrap();
