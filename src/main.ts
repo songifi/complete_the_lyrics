@@ -1,13 +1,103 @@
-import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { NestFactory } from "@nestjs/core";
+import { ValidationPipe, Logger } from "@nestjs/common";
+import { AppModule } from "./app.module";
+import { SecurityService, CspService } from "./security";
+import { CspMiddleware, CspHeaderMiddleware } from "./security";
+import * as bodyParser from "body-parser";
+import { Request, Response, NextFunction } from "express";
+import { ConfigService } from "@nestjs/config";
+import helmet from "helmet";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-    const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3000);
-  
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
+
+  const expressApp = app.getHttpAdapter().getInstance();
+  if (expressApp && typeof expressApp.set === "function") {
+    expressApp.set("trust proxy", 1);
+  }
+
+  const securityService = app.get(SecurityService);
+  app.enableCors(securityService.getCorsConfig());
+
+  app.use(helmet(securityService.getHelmetConfig()));
+
+  const cspService = app.get(CspService);
+
+  app.use(new CspMiddleware().use);
+
+  app.use(new CspHeaderMiddleware(cspService).use);
+
+  const configService = app.get(ConfigService);
+  const securityConfig = configService.get("security");
+  const maxSize = securityConfig?.validation?.maxBodySize || 10 * 1024 * 1024;
+
+  app.use(bodyParser.json({ limit: maxSize }));
+
+  app.use(
+    bodyParser.urlencoded({
+      extended: true,
+      limit: maxSize,
+      parameterLimit: 1000,
+    }),
+  );
+
+  app.use(
+    bodyParser.raw({
+      type: ["application/json", "text/plain"],
+      limit: maxSize,
+    }),
+  );
+
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err.type === "entity.too.large") {
+      return res.status(413).json({
+        error: "Payload Too Large",
+        message: `Request payload exceeds maximum allowed size of ${maxSize / (1024 * 1024)}MB`,
+        statusCode: 413,
+        path: req.path,
+        method: req.method,
+      });
+    }
+    next(err);
+  });
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), microphone=(), camera=()",
+    );
+    next();
+  });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      forbidUnknownValues: true,
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
+      validationError: {
+        target: false,
+        value: false,
+      },
+    }),
+  );
+
+  app.setGlobalPrefix("api/v1");
+
+  const port = process.env.PORT || 3000;
   await app.listen(port);
-   console.log(`App running on port ${port}`);
+
+  Logger.log(`Application is running on: http://localhost:${port}`);
+  Logger.log(`Payment system initialized with Stripe integration`);
+  Logger.log(`Security middleware and protective measures enabled`);
+  Logger.log(`API versioning enabled with prefix: /api/v1`);
+  Logger.log(`Security headers configured`);
+  Logger.log(`Rate limiting enabled`);
+  Logger.log(`Request logging and validation active`);
 }
 bootstrap();
