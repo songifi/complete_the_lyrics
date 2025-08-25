@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GameRound } from '../entities/game-round.entity';
-import { GameRoundRepository } from '../repositories/game-round.repository';
-import { RoundQuestionGeneratorService } from '../services/round-question-generator.service';
+import { GameRound } from './entities/game-round.entity';
+import { GameRoundRepository } from './game-round.repository';
+import { RoundQuestionGeneratorService } from './round-question-generator.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([GameRound])],
