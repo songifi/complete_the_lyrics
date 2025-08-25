@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions, FindOneOptions } from 'typeorm';
-import { GameRound, QuestionType, RoundStatus } from '../entities/game-round.entity';
+import { GameRound, QuestionType, RoundStatus } from './entities/game-round.entity';
 
 export interface CreateRoundDto {
   sessionId: string;
