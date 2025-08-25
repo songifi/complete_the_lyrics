@@ -10,6 +10,16 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { IsEmail, IsString, MinLength, IsOptional, IsBoolean, IsDate } from 'class-validator';
+import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
+
+function isBcryptHash(value: string): boolean {
+  try {
+    return typeof bcrypt.getRounds(value) === 'number';
+  } catch {
+    return false;
+  }
+}
 
 @Entity('users')
 export class User {
@@ -52,32 +62,32 @@ export class User {
   @IsString()
   @IsOptional()
   @Exclude()
-  emailVerificationToken?: string;
+  emailVerificationToken?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   @IsDate()
   @IsOptional()
-  emailVerificationExpires?: Date;
+  emailVerificationExpires?: Date | null;
 
   @Column({ nullable: true, select: false })
   @Index()
   @IsString()
   @IsOptional()
   @Exclude()
-  passwordResetToken?: string;
+  passwordResetToken?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   @IsDate()
   @IsOptional()
-  passwordResetExpires?: Date;
+  passwordResetExpires?: Date | null;
 
   @Column({ default: 0 })
   loginAttempts: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   @IsDate()
   @IsOptional()
-  lockUntil?: Date;
+  lockUntil: Date | null;
 
   @Column({ default: false })
   @IsBoolean()
@@ -87,7 +97,7 @@ export class User {
   @IsBoolean()
   isActive: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   @IsDate()
   @IsOptional()
   lastLoginAt?: Date;
@@ -105,10 +115,10 @@ export class User {
   @IsOptional()
   preferences?: Record<string, any>;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   isLockedOut(): boolean {
@@ -134,5 +144,60 @@ export class User {
       return `${this.firstName} ${this.lastName}`;
     }
     return this.firstName || this.lastName || this.username;
+  }
+
+  @BeforeInsert()
+  async beforeInsertNormalizeAndHash(): Promise<void> {
+    try {
+      if (this.email) {
+        this.email = this.email.trim().toLowerCase();
+      }
+
+      if (this.password) {
+        if (!isBcryptHash(this.password)) {
+          this.password = await bcrypt.hash(this.password, 12);
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @BeforeUpdate()
+  async beforeUpdateNormalizeAndHash(): Promise<void> {
+    try {
+      if (this.email) {
+        this.email = this.email.trim().toLowerCase();
+      }
+
+      if (this.password) {
+        if (!isBcryptHash(this.password)) {
+          this.password = await bcrypt.hash(this.password, 12);
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  setEmailVerificationToken(rawToken: string): void {
+    const hashed = createHash('sha256').update(rawToken).digest('hex');
+    this.emailVerificationToken = hashed;
+  }
+
+  setPasswordResetToken(rawToken: string): void {
+    const hashed = createHash('sha256').update(rawToken).digest('hex');
+    this.passwordResetToken = hashed;
+  }
+
+  clearEmailVerificationToken(): void {
+    this.emailVerificationToken = null;
+    this.emailVerificationExpires = null;
+  }
+
+  clearPasswordResetToken(): void {
+    this.passwordResetToken = null;
+    this.passwordResetExpires = null;
   }
 }

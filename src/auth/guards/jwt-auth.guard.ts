@@ -51,7 +51,7 @@ export class OptionalJwtGuard extends AuthGuard(JWT_STRATEGY.ACCESS) {
 
   handleRequest(err: any, user: any, info: any) {
     // Don't throw error if no user, just return null
-    if (err) {
+    if (err || !user) {
       return null;
     }
     return user;

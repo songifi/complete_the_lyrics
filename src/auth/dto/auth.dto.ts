@@ -136,3 +136,20 @@ export class NativeAuthResponseDto extends AuthResponseDto {
   @ApiProperty({ description: 'Refresh token (returned only for native clients)' })
   refreshToken: string;
 }
+
+export interface UserDto {
+  id: string;
+  email: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  isEmailVerified: boolean;
+}
+
+export interface AuthServiceResult {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  refreshToken: string;
+  user: UserDto;
+}

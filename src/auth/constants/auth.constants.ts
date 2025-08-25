@@ -85,7 +85,7 @@ export const AUTH_CONSTANTS = {
   
   // Password Requirements
   MIN_PASSWORD_LENGTH: 8,
-  PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+  PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
   
   // Bcrypt configuration
   BCRYPT_ROUNDS: 12,

@@ -97,13 +97,70 @@ export class EmailService implements OnModuleInit {
     }
   }
 
+  private buildFrontendUrl(pathname: string, params: Record<string, string>): string {
+    const frontendUrl = this.configService.get('FRONTEND_URL') as string;
+    try {
+      const url = new URL(frontendUrl);
+      url.search = '';
+      const basePath = url.pathname?.endsWith('/') ? url.pathname.slice(0, -1) : (url.pathname || '');
+      const appendPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+      url.pathname = `${basePath}${appendPath}`;
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+      });
+      return url.toString();
+    } catch {
+      const normalizedBase = (frontendUrl || '').replace(/\/+$/, '');
+      const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+      const query = new URLSearchParams(params).toString();
+      return `${normalizedBase}${normalizedPath}${query ? `?${query}` : ''}`;
+    }
+  }
+
+  /**
+   * Validates that a URL is http(s), matches the configured FRONTEND_URL host, and
+   * its pathname starts with an allowed path. Returns an HTML-escaped string.
+   * Falls back to a safe origin or '#'
+   */
+  private validateAndEscapeUrl(rawUrl: string, allowedPaths: string[]): string {
+    try {
+      const parsed = new URL(rawUrl);
+      if (!/^https?:$/.test(parsed.protocol)) {
+        throw new Error('Invalid protocol');
+      }
+
+      const configuredBase = this.configService.get('FRONTEND_URL') as string;
+      const configured = new URL(configuredBase);
+
+      if (parsed.host !== configured.host) {
+        throw new Error('Unexpected host');
+      }
+
+      const normalizedAllowed = allowedPaths.map(p => (p.startsWith('/') ? p : `/${p}`));
+      if (!normalizedAllowed.some(p => parsed.pathname.startsWith(p))) {
+        throw new Error('Unexpected path');
+      }
+
+      return this.escapeHtml(parsed.toString());
+    } catch (error) {
+      this.logger.warn(`Blocked or sanitized unsafe URL in email: ${rawUrl}`);
+      try {
+        const fallbackBase = this.configService.get('FRONTEND_URL') as string;
+        const safeOrigin = new URL(fallbackBase).origin;
+        return this.escapeHtml(safeOrigin);
+      } catch {
+        return '#';
+      }
+    }
+  }
+
   async sendVerificationEmail(email: string, token: string, username: string): Promise<void> {
     if (!this.isReady()) {
       throw new Error('EmailService is not yet initialized');
     }
 
     try {
-      const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email?token=${token}`;
+      const verificationUrl = this.buildFrontendUrl('verify-email', { token });
       const emailContent = this.generateVerificationEmail(verificationUrl, username);
       
       if (this.emailProvider) {
@@ -134,7 +191,7 @@ export class EmailService implements OnModuleInit {
     }
 
     try {
-      const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
+      const resetUrl = this.buildFrontendUrl('reset-password', { token });
       const emailContent = this.generatePasswordResetEmail(resetUrl, username);
       
       if (this.emailProvider) {
@@ -184,7 +241,6 @@ export class EmailService implements OnModuleInit {
       
     } catch (error) {
       this.logger.error(`Failed to send welcome email to ${email}:`, error);
-      // Don't throw error for welcome email as it's not critical
     }
   }
 
@@ -207,6 +263,7 @@ export class EmailService implements OnModuleInit {
 
   private generateVerificationEmail(verificationUrl: string, username: string): string {
     const safeUsername = this.sanitizeUsername(username);
+    const safeVerificationUrl = this.validateAndEscapeUrl(verificationUrl, ['/verify-email']);
     return `
       <!DOCTYPE html>
       <html>
@@ -217,7 +274,7 @@ export class EmailService implements OnModuleInit {
         <body>
           <h2>Hello ${safeUsername}!</h2>
           <p>Thank you for registering with Complete The Lyrics. Please verify your email address by clicking the link below:</p>
-          <p><a href="${verificationUrl}">Verify Email Address</a></p>
+          <p><a href="${safeVerificationUrl}">${safeVerificationUrl}</a></p>
           <p>If you didn't create an account, please ignore this email.</p>
           <p>This link will expire in 24 hours.</p>
           <p>Best regards,<br>Complete The Lyrics</p>
@@ -228,6 +285,7 @@ export class EmailService implements OnModuleInit {
 
   private generatePasswordResetEmail(resetUrl: string, username: string): string {
     const safeUsername = this.sanitizeUsername(username);
+    const safeResetUrl = this.validateAndEscapeUrl(resetUrl, ['/reset-password']);
     return `
       <!DOCTYPE html>
       <html>
@@ -238,7 +296,7 @@ export class EmailService implements OnModuleInit {
         <body>
           <h2>Hello ${safeUsername}!</h2>
           <p>You requested a password reset. Please click the link below to reset your password:</p>
-          <p><a href="${resetUrl}">Reset Password</a></p>
+          <p><a href="${safeResetUrl}">${safeResetUrl}</a></p>
           <p>If you didn't request a password reset, please ignore this email.</p>
           <p>This link will expire in 1 hour.</p>
           <p>Best regards,<br>Complete The Lyrics</p>

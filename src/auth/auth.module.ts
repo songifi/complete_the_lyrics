@@ -11,6 +11,7 @@ import { JwtRefreshStrategy } from './strategies/jwt.strategy';
 import { JwtAccessGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-auth.guard';
 import { OptionalJwtGuard } from './guards/jwt-auth.guard';
+import { FacebookAuthGuard } from './guards/facebook-auth.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { GitHubStrategy } from './strategies/github.strategy';
@@ -57,6 +58,7 @@ import { UserSubscriber } from './subscribers/user.subscriber';
     JwtAccessGuard,
     JwtRefreshGuard,
     OptionalJwtGuard,
+    FacebookAuthGuard,
     GoogleStrategy,
     FacebookStrategy,
     GitHubStrategy,
@@ -68,6 +70,7 @@ import { UserSubscriber } from './subscribers/user.subscriber';
     JwtAccessGuard,
     JwtRefreshGuard,
     OptionalJwtGuard,
+    FacebookAuthGuard,
     TypeOrmModule,
   ],
 })

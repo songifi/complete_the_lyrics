@@ -31,6 +31,7 @@ export class TwitterStrategy extends PassportStrategy(Strategy, 'twitter') {
       consumerSecret,
       callbackURL,
       includeEmail: true,
+      state: true,
     });
   }
 

@@ -31,6 +31,7 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
       clientSecret,
       callbackURL,
       scope: ['user:email'],
+      state: true,
     });
   }
 

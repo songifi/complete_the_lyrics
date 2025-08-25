@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -28,6 +28,7 @@ import {
   AuthResponseDto,
 } from '../dto/auth.dto';
 import { AUTH_CONSTANTS, AUTH_ERRORS, AUTH_MESSAGES } from '../constants/auth.constants';
+import { AuthServiceResult, UserDto } from '../dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -43,7 +44,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto, ipAddress?: string): Promise<AuthResponseDto> {
+  async register(registerDto: RegisterDto, ipAddress?: string): Promise<AuthServiceResult> {
     const { email, username, password, firstName, lastName } = registerDto;
 
     // Check if user already exists
@@ -77,7 +78,8 @@ export class AuthService {
       password: hashedPassword,
       firstName,
       lastName,
-      emailVerificationToken,
+      // store only hashed token
+      emailVerificationToken: crypto.createHash('sha256').update(emailVerificationToken).digest('hex'),
       emailVerificationExpires,
       lastLoginIp: ipAddress,
     });
@@ -97,20 +99,22 @@ export class AuthService {
 
     this.logger.log(`User registered successfully: ${email}`);
 
+    const userDto: UserDto = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isEmailVerified: user.isEmailVerified,
+    };
+
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isEmailVerified: user.isEmailVerified,
-      },
+      user: userDto,
     };
   }
 
-  async login(loginDto: LoginDto, ipAddress?: string): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto, ipAddress?: string): Promise<AuthServiceResult> {
     const { identifier, password, rememberMe } = loginDto;
 
     // Find user by email or username
@@ -150,20 +154,22 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${user.email}`);
 
+    const userDto: UserDto = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isEmailVerified: user.isEmailVerified,
+    };
+
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isEmailVerified: user.isEmailVerified,
-      },
+      user: userDto,
     };
   }
 
-  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<AuthResponseDto> {
+  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<AuthServiceResult> {
     const { refreshToken } = refreshTokenDto;
 
     try {
@@ -198,16 +204,18 @@ export class AuthService {
 
       this.logger.log(`Token refreshed for user: ${tokenEntity.user.email}`);
 
+      const userDto: UserDto = {
+        id: tokenEntity.user.id,
+        email: tokenEntity.user.email,
+        username: tokenEntity.user.username,
+        firstName: tokenEntity.user.firstName,
+        lastName: tokenEntity.user.lastName,
+        isEmailVerified: tokenEntity.user.isEmailVerified,
+      };
+
       return {
         ...tokens,
-        user: {
-          id: tokenEntity.user.id,
-          email: tokenEntity.user.email,
-          username: tokenEntity.user.username,
-          firstName: tokenEntity.user.firstName,
-          lastName: tokenEntity.user.lastName,
-          isEmailVerified: tokenEntity.user.isEmailVerified,
-        },
+        user: userDto,
       };
     } catch (error) {
       this.logger.error('Token refresh failed:', error);
@@ -248,7 +256,8 @@ export class AuthService {
       Date.now() + AUTH_CONSTANTS.PASSWORD_RESET_EXPIRES_IN * 1000,
     );
 
-    user.passwordResetToken = passwordResetToken;
+    // store only hashed token
+    user.passwordResetToken = crypto.createHash('sha256').update(passwordResetToken).digest('hex');
     user.passwordResetExpires = passwordResetExpires;
     await this.userRepository.save(user);
 
@@ -269,8 +278,9 @@ export class AuthService {
     // Validate password strength
     this.validatePasswordStrength(newPassword);
 
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.userRepository.findOne({
-      where: { passwordResetToken: token },
+      where: { passwordResetToken: hashedToken },
       select: ['id', 'email', 'username', 'password', 'passwordResetToken', 'passwordResetExpires'],
     });
 
@@ -299,8 +309,9 @@ export class AuthService {
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<void> {
     const { token } = verifyEmailDto;
 
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.userRepository.findOne({
-      where: { emailVerificationToken: token },
+      where: { emailVerificationToken: hashedToken },
       select: ['id', 'email', 'username', 'emailVerificationToken', 'emailVerificationExpires'],
     });
 
@@ -345,7 +356,8 @@ export class AuthService {
       Date.now() + AUTH_CONSTANTS.EMAIL_VERIFICATION_EXPIRES_IN * 1000,
     );
 
-    user.emailVerificationToken = emailVerificationToken;
+    // store only hashed token
+    user.emailVerificationToken = crypto.createHash('sha256').update(emailVerificationToken).digest('hex');
     user.emailVerificationExpires = emailVerificationExpires;
     await this.userRepository.save(user);
 
@@ -519,9 +531,7 @@ export class AuthService {
     // Check if user already exists with this OAuth provider
     const existingUser = await this.userRepository.findOne({
       where: {
-        oauthProviders: {
-          [provider]: { id: profile.providerId }
-        }
+        oauthProviders: Raw(alias => `${alias} -> '${provider}' ->> 'id' = :providerId`, { providerId: profile.providerId })
       }
     });
 

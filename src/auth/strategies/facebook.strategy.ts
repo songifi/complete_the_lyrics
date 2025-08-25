@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy } from 'passport-facebook';
+import { Strategy, Profile } from 'passport-facebook';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -30,21 +30,32 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       clientID,
       clientSecret,
       callbackURL,
-      scope: ['email', 'public_profile'],
       profileFields: ['id', 'emails', 'name', 'photos'],
+      state: true,
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: any) {
-    return {
-      provider: 'facebook',
-      providerId: profile.id,
-      email: profile.emails?.[0]?.value,
-      username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0],
-      firstName: profile.name?.givenName,
-      lastName: profile.name?.familyName,
-      avatar: profile.photos?.[0]?.value,
-    };
+  validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    done: (error: any, user?: any, info?: any) => void,
+  ): void {
+    try {
+      const user = {
+        provider: 'facebook',
+        providerId: profile.id,
+        email: profile.emails?.[0]?.value,
+        username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0],
+        firstName: profile.name?.givenName,
+        lastName: profile.name?.familyName,
+        avatar: profile.photos?.[0]?.value,
+      };
+
+      done(null, user);
+    } catch (err) {
+      done(err as Error);
+    }
   }
 }
 

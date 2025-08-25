@@ -52,6 +52,7 @@ import {
   NativeAuthResponseDto,
 } from '../dto/auth.dto';
 import { JwtAccessGuard } from '../guards/jwt-auth.guard';
+import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
 import { AUTH_MESSAGES, AUTH_CONSTANTS } from '../constants/auth.constants';
 
 @ApiTags('Authentication')
@@ -78,7 +79,7 @@ export class AuthController {
     const result = await this.authService.register(registerDto, ipAddress);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -94,7 +95,7 @@ export class AuthController {
     };
 
     if (native) {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -120,7 +121,7 @@ export class AuthController {
     const result = await this.authService.login(loginDto, ipAddress);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -136,7 +137,7 @@ export class AuthController {
     };
 
     if (native) {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -166,7 +167,7 @@ export class AuthController {
     const result = await this.authService.refreshToken({ refreshToken: token as string });
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -182,7 +183,7 @@ export class AuthController {
     };
 
     if (native) {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -340,7 +341,7 @@ export class AuthController {
     const result = await this.authService.generateTokens(user);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -363,7 +364,7 @@ export class AuthController {
     };
 
     if (native === 'true') {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -372,13 +373,13 @@ export class AuthController {
   @Get('facebook')
   @ApiOperation({ summary: 'Facebook OAuth authentication' })
   @ApiResponse({ status: 200, description: 'Redirects to Facebook OAuth' })
-  @UseGuards(AuthGuard('facebook'))
+  @UseGuards(FacebookAuthGuard)
   async facebookAuth() {}
 
   @Get('facebook/callback')
   @ApiOperation({ summary: 'Facebook OAuth callback' })
   @ApiResponse({ status: 200, description: 'Facebook OAuth successful' })
-  @UseGuards(AuthGuard('facebook'))
+  @UseGuards(FacebookAuthGuard)
   async facebookAuthCallback(
     @Req() req: any,
     @Res({ passthrough: true }) res: Response,
@@ -388,7 +389,7 @@ export class AuthController {
     const result = await this.authService.generateTokens(user);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -411,7 +412,7 @@ export class AuthController {
     };
 
     if (native === 'true') {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -436,7 +437,7 @@ export class AuthController {
     const result = await this.authService.generateTokens(user);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
@@ -459,7 +460,7 @@ export class AuthController {
     };
 
     if (native === 'true') {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;
@@ -484,12 +485,12 @@ export class AuthController {
     const result = await this.authService.generateTokens(user);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', (result as any).refreshToken, {
+    res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
       path: '/auth/refresh',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_IN * 1000,
     });
 
     const baseBody: AuthResponseDto = {
@@ -507,7 +508,7 @@ export class AuthController {
     };
 
     if (native === 'true') {
-      return { ...baseBody, refreshToken: (result as any).refreshToken } as NativeAuthResponseDto;
+      return { ...baseBody, refreshToken: result.refreshToken } as NativeAuthResponseDto;
     }
 
     return baseBody;

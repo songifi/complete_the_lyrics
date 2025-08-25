@@ -7,16 +7,31 @@ export class HashRefreshTokens1713970000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD COLUMN "tokenHash" character varying`);
 
-    // Backfill tokenHash using Node crypto to avoid relying on DB extensions
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+
+    await queryRunner.query(`
+      UPDATE "refresh_tokens" 
+      SET token = 'placeholder_' || id::text || '_' || encode(gen_random_bytes(16), 'hex')
+      WHERE token IS NULL OR token = ''
+    `);
+
     const rows: Array<{ id: string; token: string }> = await queryRunner.query(
       `SELECT id, token FROM "refresh_tokens"`
     );
 
-    // Use same pepper as in service; fallback to JWT_REFRESH_SECRET if env not set
-    const pepper = process.env.REFRESH_TOKEN_PEPPER || process.env.JWT_REFRESH_SECRET || 'default_refresh_secret';
+    const pepper = process.env.REFRESH_TOKEN_PEPPER || process.env.JWT_REFRESH_SECRET;
+    
+    if (!pepper) {
+      throw new Error(
+        'Migration failed: REFRESH_TOKEN_PEPPER or JWT_REFRESH_SECRET environment variable must be set. ' +
+        'Please configure one of these environment variables before running the migration.'
+      );
+    }
 
     for (const row of rows) {
-      if (!row.token) continue;
+      if (row.token === null || row.token === '') {
+        continue;
+      }
       const hash = crypto.createHmac('sha256', pepper).update(row.token).digest('hex');
       await queryRunner.query(
         `UPDATE "refresh_tokens" SET "tokenHash" = $1 WHERE "id" = $2`,
@@ -31,7 +46,6 @@ export class HashRefreshTokens1713970000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD COLUMN "token" character varying`);
-    // We cannot recover original token from hash; keep nulls
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_refresh_tokens_token_hash"`);
     await queryRunner.query(`ALTER TABLE "refresh_tokens" DROP COLUMN "tokenHash"`);
   }
