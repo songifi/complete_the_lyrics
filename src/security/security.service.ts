@@ -48,7 +48,7 @@ export class SecurityService {
       crossOriginOpenerPolicy: { policy: "same-origin" as const },
       crossOriginResourcePolicy: { policy: "cross-origin" as const },
       dnsPrefetchControl: { allow: false },
-      frameguard: { action: "deny" },
+      frameguard: { action: "deny" as const },
       hidePoweredBy: true,
       hsts: {
         maxAge: 31536000,
@@ -57,7 +57,7 @@ export class SecurityService {
       },
       ieNoOpen: true,
       noSniff: true,
-      permittedCrossDomainPolicies: { permittedPolicies: "none" },
+      permittedCrossDomainPolicies: { permittedPolicies: "none" as const },
       referrerPolicy: { policy: "strict-origin-when-cross-origin" as const },
       xssFilter: true,
     };

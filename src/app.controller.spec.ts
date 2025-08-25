@@ -8,7 +8,21 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        {
+          provide: 'HealthCheckService',
+          useValue: {
+            check: jest.fn(),
+          },
+        },
+        {
+          provide: 'TypeOrmHealthIndicator',
+          useValue: {
+            pingCheck: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);

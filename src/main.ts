@@ -7,6 +7,9 @@ import * as bodyParser from "body-parser";
 import { Request, Response, NextFunction } from "express";
 import { ConfigService } from "@nestjs/config";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import passport from "passport";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -22,6 +25,29 @@ async function bootstrap() {
   app.enableCors(securityService.getCorsConfig());
 
   app.use(helmet(securityService.getHelmetConfig()));
+
+  app.use(cookieParser());
+
+  // Configure session middleware for OAuth state parameter verification
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error('SESSION_SECRET environment variable is required for session security.');
+  }
+  app.use(session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: (process.env.SESSION_COOKIE_SAMESITE as 'lax' | 'none' | 'strict') || 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+    name: 'oauth-session',
+  }));
+
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   const cspService = app.get(CspService);
 

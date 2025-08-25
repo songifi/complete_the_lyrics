@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { SecurityModule } from "./security/security.module";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module";
+import { AuthModule } from "./auth/auth.module";
 import * as Joi from "joi";
 
 @Module({
@@ -36,10 +37,12 @@ import * as Joi from "joi";
         database: configService.get("DB_NAME"),
         entities: [__dirname + "/**/*.entity{.ts,.js}"],
         synchronize: configService.get("NODE_ENV") === "development",
+        // Subscribers can be provided via modules; no global subscriber here
       }),
     }),
     SecurityModule,
     LeaderboardModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
