@@ -7,6 +7,7 @@ import * as bodyParser from "body-parser";
 import { Request, Response, NextFunction } from "express";
 import { ConfigService } from "@nestjs/config";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -22,6 +23,8 @@ async function bootstrap() {
   app.enableCors(securityService.getCorsConfig());
 
   app.use(helmet(securityService.getHelmetConfig()));
+
+  app.use(cookieParser());
 
   const cspService = app.get(CspService);
 
