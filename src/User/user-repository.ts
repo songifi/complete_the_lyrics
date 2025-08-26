@@ -1,10 +1,10 @@
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../entities/user.entity';
-import { UserSearchDto } from '../dto/user-search.dto';
-import { UserStatistics, PaginatedUsers } from '../interfaces/user-statistics.interface';
-import { UserResponseDto } from '../dto/user-response.dto';
+import { User } from './user.entity';
+import { UserSearchDto } from './dto/user-search.dto';
+import { UserStatistics, PaginatedUsers } from './interfaces/user-statistic.interface'; //'../interfaces/user-statistics.interface';
+import { UserResponseDto } from './dto/user-response.dto';
 import { plainToClass } from 'class-transformer';
 
 @Injectable()

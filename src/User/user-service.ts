@@ -4,7 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserSearchDto } from './dto/user-search.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { User } from './entities/user.entity';
+import { User } from './user.entity';
 import { UserStatistics, PaginatedUsers } from './interfaces/user-statistic.interface';
 import { plainToClass } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
