@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { SecurityModule } from "./security/security.module";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module";
 import { AuthModule } from "./auth/auth.module";
+import { UserProfilesModule } from "./user-profiles/user-profiles.module";
 import * as Joi from "joi";
 
 @Module({
@@ -43,6 +44,7 @@ import * as Joi from "joi";
     SecurityModule,
     LeaderboardModule,
     AuthModule,
+    UserProfilesModule,
   ],
   controllers: [],
   providers: [],
