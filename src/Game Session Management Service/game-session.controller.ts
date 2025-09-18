@@ -49,6 +49,23 @@ export class GameSessionController {
     return this.gameSessionService.leaveSession(playerId);
   }
 
+  // History
+  @Get("history")
+  async listHistory(
+    @Query("limit") limit?: number,
+    @Query("offset") offset?: number
+  ) {
+    return this.gameSessionService.listArchivedSessions(
+      Number(limit) || 20,
+      Number(offset) || 0
+    );
+  }
+
+  @Get("history/:id")
+  async getHistory(@Param("id") id: string) {
+    return this.gameSessionService.getArchivedSession(id);
+  }
+
   @Get(":sessionId")
   async getSession(@Param("sessionId") sessionId: string) {
     return this.gameSessionService.getSession(sessionId);
@@ -135,7 +152,7 @@ export class GameSessionController {
     @Param("sessionId") sessionId: string,
     @Body() dto: ModerationActionDto
   ) {
-    this.gameSessionService.kickPlayer(sessionId, dto.hostId, dto.targetId);
+    await this.gameSessionService.kickPlayer(sessionId, dto.hostId, dto.targetId);
   }
 
   @Post(":sessionId/moderation/ban")
@@ -146,7 +163,7 @@ export class GameSessionController {
     @Param("sessionId") sessionId: string,
     @Body() dto: ModerationActionDto
   ) {
-    this.gameSessionService.banPlayer(sessionId, dto.hostId, dto.targetId);
+    await this.gameSessionService.banPlayer(sessionId, dto.hostId, dto.targetId);
   }
 
   @Post(":sessionId/moderation/unban")
@@ -157,7 +174,7 @@ export class GameSessionController {
     @Param("sessionId") sessionId: string,
     @Body() dto: ModerationActionDto
   ) {
-    this.gameSessionService.unbanPlayer(sessionId, dto.hostId, dto.targetId);
+    await this.gameSessionService.unbanPlayer(sessionId, dto.hostId, dto.targetId);
   }
 
   @Post(":sessionId/moderation/transfer-host")
@@ -168,24 +185,7 @@ export class GameSessionController {
     @Param("sessionId") sessionId: string,
     @Body() dto: TransferHostDto
   ) {
-    this.gameSessionService.transferOwnership(sessionId, dto.hostId, dto.newHostId);
-  }
-
-  // History
-  @Get("history")
-  async listHistory(
-    @Query("limit") limit?: number,
-    @Query("offset") offset?: number
-  ) {
-    return this.gameSessionService.listArchivedSessions(
-      Number(limit) || 20,
-      Number(offset) || 0
-    );
-  }
-
-  @Get("history/:id")
-  async getHistory(@Param("id") id: string) {
-    return this.gameSessionService.getArchivedSession(id);
+    await this.gameSessionService.transferOwnership(sessionId, dto.hostId, dto.newHostId);
   }
 
   @Get(":sessionId/analytics")
