@@ -145,6 +145,11 @@ export class GameRoundRepository {
     return await this.findById(id);
   }
 
+  async updateRound(id: string, updates: Partial<GameRound>): Promise<GameRound | null> {
+    await this.repository.update(id, updates);
+    return await this.findById(id);
+  }
+
   async startRound(id: string): Promise<GameRound | null> {
     const startTime = new Date();
     await this.repository.update(id, { 
