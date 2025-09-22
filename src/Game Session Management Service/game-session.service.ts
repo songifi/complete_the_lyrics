@@ -15,14 +15,21 @@ import {
   CreateSessionDto,
   JoinSessionDto,
   SessionAnalytics,
+  SessionArchiveEntry,
+  ListSessionsQuery,
+  SessionSummary,
+  SessionStatus,
 } from "./types/game-session.types";
 
 @Injectable()
+
+
 export class GameSessionService {
   private readonly logger = new Logger(GameSessionService.name);
   private readonly sessions = new Map<string, GameSession>();
   private readonly sessionsByCode = new Map<string, string>();
   private readonly playerSessions = new Map<string, string>();
+  private readonly sessionArchive: Array<SessionArchiveEntry> = [];
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
@@ -99,6 +106,11 @@ export class GameSessionService {
       session.state !== SessionState.ACTIVE
     ) {
       throw new BadRequestException("Session is not accepting new players");
+    }
+
+    // Check banned list
+    if (session.bannedPlayerIds && session.bannedPlayerIds.has(dto.playerId)) {
+      throw new BadRequestException("Player is banned from this session");
     }
 
     // Check if player is already in session
@@ -257,6 +269,11 @@ export class GameSessionService {
 
     this.trackStateTransition(session, oldState, newState);
 
+    // Archive when terminal states reached
+    if (newState === SessionState.FINISHED || newState === SessionState.EXPIRED) {
+      this.archiveSession(session);
+    }
+
     this.logger.log(
       `Session ${session.code} transitioned from ${oldState} to ${newState}`
     );
@@ -371,6 +388,180 @@ export class GameSessionService {
 
     this.logger.log(`Session cleaned up: ${session.code} (${sessionId})`);
     this.eventEmitter.emit("session.cleaned.up", session);
+  }
+
+  // Discovery and listing
+  listSessions(query: ListSessionsQuery = {}): SessionSummary[] {
+    const { state, gameType, isPrivate, search, limit = 20, offset = 0 } = query;
+    const normalizedSearch = search?.toLowerCase();
+    const items = Array.from(this.sessions.values())
+      .filter((s) =>
+        state ? s.state === (state as SessionState) : true
+      )
+      .filter((s) => (gameType ? s.configuration.gameType === gameType : true))
+      .filter((s) =>
+        typeof isPrivate === "boolean" ? s.configuration.isPrivate === isPrivate : true
+      )
+      .filter((s) =>
+        normalizedSearch
+          ? s.code.toLowerCase().includes(normalizedSearch) ||
+            s.configuration.gameType.toLowerCase().includes(normalizedSearch)
+          : true
+      )
+      .map((s) => this.toSummary(s));
+
+    return items.slice(offset, offset + limit);
+  }
+
+  discoverPublicSessions(search?: string): SessionSummary[] {
+    return this.listSessions({ isPrivate: false, search });
+  }
+
+  getSessionStatus(sessionId: string): SessionStatus {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    return {
+      id: session.id,
+      code: session.code,
+      state: session.state,
+      playerCount: session.players.size,
+      spectatorCount: session.spectators.size,
+      maxPlayers: session.configuration.maxPlayers,
+      isPrivate: session.configuration.isPrivate,
+      updatedAt: session.updatedAt,
+    };
+  }
+
+  getParticipants(sessionId: string) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    return {
+      players: Array.from(session.players.values()),
+      spectators: Array.from(session.spectators.values()),
+    };
+  }
+
+  // Moderation
+  kickPlayer(sessionId: string, hostId: string, targetId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    if (session.hostId !== hostId) {
+      throw new BadRequestException("Only host can moderate the session");
+    }
+    if (targetId === hostId) {
+      throw new BadRequestException("Host cannot kick themselves");
+    }
+
+    if (session.players.delete(targetId) || session.spectators.delete(targetId)) {
+      this.playerSessions.delete(targetId);
+      this.logger.log(`Player ${targetId} kicked from session ${session.code}`);
+      this.eventEmitter.emit("session.player.kicked", { session, targetId });
+    } else {
+      throw new NotFoundException("Target not in session");
+    }
+  }
+
+  banPlayer(sessionId: string, hostId: string, targetId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    if (session.hostId !== hostId) {
+      throw new BadRequestException("Only host can moderate the session");
+    }
+    session.bannedPlayerIds = session.bannedPlayerIds || new Set<string>();
+    session.bannedPlayerIds.add(targetId);
+    if (session.players.has(targetId) || session.spectators.has(targetId)) {
+      this.kickPlayer(sessionId, hostId, targetId);
+    }
+    this.logger.log(`Player ${targetId} banned from session ${session.code}`);
+    this.eventEmitter.emit("session.player.banned", { session, targetId });
+  }
+
+  unbanPlayer(sessionId: string, hostId: string, targetId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    if (session.hostId !== hostId) {
+      throw new BadRequestException("Only host can moderate the session");
+    }
+    session.bannedPlayerIds = session.bannedPlayerIds || new Set<string>();
+    session.bannedPlayerIds.delete(targetId);
+    this.logger.log(`Player ${targetId} unbanned in session ${session.code}`);
+    this.eventEmitter.emit("session.player.unbanned", { session, targetId });
+  }
+
+  transferOwnership(sessionId: string, hostId: string, newHostId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+    if (session.hostId !== hostId) {
+      throw new BadRequestException("Only host can transfer ownership");
+    }
+    const newHost = session.players.get(newHostId);
+    if (!newHost) {
+      throw new NotFoundException("New host must be a current player");
+    }
+    const oldHostId = session.hostId;
+    session.hostId = newHostId;
+    newHost.isHost = true;
+    const oldHost = session.players.get(oldHostId);
+    if (oldHost) oldHost.isHost = false;
+    this.logger.log(`Host transferred from ${oldHostId} to ${newHostId} in session ${session.code}`);
+    this.eventEmitter.emit("session.host.transferred.manual", { session, oldHostId, newHostId });
+  }
+
+  // History
+  listArchivedSessions(limit = 20, offset = 0): SessionArchiveEntry[] {
+    return this.sessionArchive.slice(offset, offset + limit);
+  }
+
+  getArchivedSession(id: string): SessionArchiveEntry | undefined {
+    return this.sessionArchive.find((e) => e.id === id);
+  }
+
+  private archiveSession(session: GameSession): void {
+    // Avoid duplicate archive entries for same session terminal transitions
+    if (this.sessionArchive.some((e) => e.id === session.id)) {
+      return;
+    }
+    this.sessionArchive.push({
+      id: session.id,
+      code: session.code,
+      hostId: session.hostId,
+      gameType: session.configuration.gameType,
+      isPrivate: session.configuration.isPrivate,
+      startedAt: session.createdAt,
+      endedAt: new Date(),
+      finalState: session.state,
+      totalPlayers: session.players.size + session.spectators.size,
+      participantIds: [
+        ...Array.from(session.players.keys()),
+        ...Array.from(session.spectators.keys()),
+      ],
+    });
+  }
+
+  private toSummary(s: GameSession): SessionSummary {
+    return {
+      id: s.id,
+      code: s.code,
+      state: s.state,
+      gameType: s.configuration.gameType,
+      isPrivate: s.configuration.isPrivate,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      playerCount: s.players.size,
+      spectatorCount: s.spectators.size,
+    };
   }
 
   // Analytics
