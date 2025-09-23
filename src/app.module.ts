@@ -6,6 +6,7 @@ import { LeaderboardModule } from "./leaderboard/leaderboard.module";
 import { AuthModule } from "./auth/auth.module";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module";
 import { GameRoundModule } from "./GameRound/game-round.module";
+import { SongsModule } from "./songs/songs.module";
 import * as Joi from "joi";
 
 @Module({
@@ -47,6 +48,7 @@ import * as Joi from "joi";
     AuthModule,
     UserProfilesModule,
     GameRoundModule,
+    SongsModule,
   ],
   controllers: [],
   providers: [],

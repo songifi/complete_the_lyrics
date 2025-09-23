@@ -11,6 +11,10 @@ import {
 @Index(['artist'])
 @Index(['genre'])
 @Index(['releaseYear'])
+@Index(['title', 'artist'], { unique: false })
+@Index(['title'], { fulltext: true })
+@Index(['artist'], { fulltext: true })
+@Index(['lyrics'], { fulltext: true })
 export class Song {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -49,6 +53,11 @@ export class Song {
     popularity?: number;
     explicit?: boolean;
     previewUrl?: string;
+    playCount?: number;
+    searchCount?: number;
+    clickCount?: number;
+    lastInteraction?: string;
+    [key: string]: any;
   };
 
   @CreateDateColumn({ name: 'created_at' })
