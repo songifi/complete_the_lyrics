@@ -13,6 +13,7 @@ import { AchievementProgress } from './entities/achievement-progress.entity';
 import { AchievementReward } from './entities/achievement-reward.entity';
 import { AchievementAnalytics } from './entities/achievement-analytics.entity';
 import { AchievementListener } from './listeners/achievement.listener';
+import { AchievementRepository } from './repositories/achievement.repository';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AchievementListener } from './listeners/achievement.listener';
     AchievementAnalyticsService,
     AchievementSharingService,
     AchievementListener,
+    AchievementRepository,
   ],
   exports: [
     AchievementsService,

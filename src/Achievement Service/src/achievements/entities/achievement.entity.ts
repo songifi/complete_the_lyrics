@@ -44,10 +44,21 @@ export class Achievement {
 
   @Column({
     type: 'enum',
+    enum: ['common', 'uncommon', 'rare', 'epic', 'legendary'],
+    default: 'common',
+  })
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+  @Column({
+    type: 'enum',
     enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'],
     default: 'bronze',
   })
   tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+  // List of prerequisite achievement IDs that must be unlocked first
+  @Column('json', { nullable: true })
+  prerequisiteIds: string[];
 
   @Column('json', { nullable: true })
   metadata: Record<string, any>;
@@ -58,6 +69,17 @@ export class Achievement {
     value: number;
     metadata?: Record<string, any>;
   }>;
+
+  // Optional custom badge/artwork fields for UI representation
+  @Column({ nullable: true })
+  badgeIconUrl: string;
+
+  @Column('json', { nullable: true })
+  badgeStyle: {
+    color?: string;
+    gradient?: string;
+    shape?: 'circle' | 'shield' | 'star' | 'ribbon' | 'hex';
+  };
 
   @Column({ default: true })
   isActive: boolean;
