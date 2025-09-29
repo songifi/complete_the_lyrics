@@ -35,6 +35,21 @@ export class AchievementProgressService {
     const updatedAchievements = [];
 
     for (const achievement of achievements) {
+      // Enforce prerequisites if defined
+      if (achievement.prerequisiteIds?.length) {
+        const countPrereqUnlocked = await this.userAchievementRepository
+          .createQueryBuilder('ua')
+          .leftJoin('ua.achievement', 'a')
+          .where('ua.userId = :userId', { userId })
+          .andWhere('ua.status = :status', { status: 'unlocked' })
+          .andWhere('a.id IN (:...ids)', { ids: achievement.prerequisiteIds })
+          .getCount();
+
+        if (countPrereqUnlocked < achievement.prerequisiteIds.length) {
+          // Skip progress updates until prerequisites are met
+          continue;
+        }
+      }
       const progress = await this.getOrCreateProgress(userId, achievement.id);
       const oldValue = progress.currentValue;
       
